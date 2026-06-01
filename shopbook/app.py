@@ -74,6 +74,31 @@ def list_products():
     return render_template('products_list.html',products=all_products)
 
 
+@app.route('/customers/add', methods=['GET','POST'])
+def add_customer():
+    if request.method == "POST":
+        c_name = request.form.get('name')
+        c_phone = request.form.get('phone')
+
+        new_customer = Customer(name=c_name, phone=c_phone)
+        db.session.add(new_customer)
+        db.session.commit()
+
+        return redirect(url_for('dashboard'))
+    return render_template('customers_add.html')
+
+@app.route('/customers')
+def list_customers():
+    all_customers = Customer.query.all()
+    return render_template('customers_list.html', customers=all_customers)
+
+@app.route('/customers/<int:customer_id>')
+def view_customer(customer_id):
+    customer = Customer.query.get_or_404(customer_id)
+
+    return render_template('customer_view.html', customer=customer)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

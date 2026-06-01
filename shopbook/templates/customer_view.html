@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Profile - ShopBook</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <div class="container mt-5">
+        <a href="{{ url_for('list_customers') }}" class="btn btn-outline-secondary mb-3">← Back to Ledger</a>
+
+        <div class="card shadow mx-auto" style="max-width: 600px">
+            <div class="card-header bg-primary text-white py-3">
+                <h3 class="mb-0">👤 Customer Account Detail</h3>
+            </div>
+            <div class="card-body">
+                <h2 class="card-title text-dark mb-4">{{ customer.id }}</h2>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted fw-bold">Phone Number:</div>
+                    <div class=col-sm-8 fs-5">{{ customer.phone if customer.phone else 'No Number Provided' }}</div>
+                </div>
+                <hr>
+                <div class="p-3 bg-white border rounded d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted d-block uppercase small fw-bold">Current Khata Balance</span>
+                        <span class="fs-2 fw-bold text-danger">₹{{customer.balance_due}}</span>
+                    </div>
+                    <div>
+                        <button class="btn btn-danger disabled">Add Due amount</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
