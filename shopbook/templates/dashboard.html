@@ -11,6 +11,7 @@
     <div class="container mt-5">
         <h1 class="mb-4">📊 ShopBook Dashboard</h1>
         <div class="row">
+
             <div class="col-md-4">
                 <div class="card text-white bg-primary mb-3">
                     <div class="card-body">
@@ -30,6 +31,38 @@
             </div>
 
         </div>
+        <div class="row mt-5">
+                <h3 class="mb-4 text-muted">🚀 Quick Actions</h3>
+
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm text-center border-primary">
+                        <div class="card-body py-4">
+                            <h5 class="card-title mb-3">📦 Product Inventory</h5>
+                            <a href="{{url_for('list_products')}}" class="btn btn-primary w-100">View Inventory</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm text-center border-primary">
+                        <div class="card-body py-4">
+                            <h5 class="card-title mb-3">👥 Khata Ledger</h5>
+                            <a href="{{url_for('list_customers')}}" class="btn btn-primary w-100">Open Directory</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm text-center border-primary">
+                        <div class="card-body py-4">
+                            <h5 class="card-title mb-3">🧾 Invoice Center</h5>
+                            <a href="{{url_for('list_bills')}}" class="btn btn-primary w-100">View Invoices</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
     </div>
 </body>
 </html>

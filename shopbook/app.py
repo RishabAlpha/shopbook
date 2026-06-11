@@ -1,5 +1,6 @@
 from flask import Flask, render_template , request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy 
+from datetime import date
 
 import os 
 
@@ -98,7 +99,77 @@ def view_customer(customer_id):
 
     return render_template('customer_view.html', customer=customer)
 
+@app.route('/bills')
+def list_bills():
+    all_bills = Bill.query.all()
+    return render_template('bills_list.html',bills=all_bills)
 
+@app.route('/bills/new', methods=['GET','POST'])
+def new_bill():
+    if request.method == 'POST':
+        # 1. Capture Form Inputs
+        cust_id = int(request.form.get('customer_id'))
+
+        # Capture lists of inputs sent from the dynamic rows
+        product_ids = request.form.getlist('product_id[]')
+        quantities = request.form.getlist('quantity[]')
+
+        # 2. First, calculate the total invoice cost on the backend for safety
+        calculated_grand_total = 0.0
+        items_to_save = []
+
+        for i in range(len(product_ids)):
+            p_id = int(product_ids[i])
+            qty = int(quantities[i])
+
+            # Fetch the product from database to get official price
+            product = Product.query.get(p_id)
+            row_price = product.unit_price * qty 
+            calculated_grand_total += row_price
+
+            # Temporarily stage our item data structure
+            items_to_save.append({
+                'product_id': p_id,
+                'qty': qty,
+                'price': product.unit_price,
+                'total': row_price
+            })
+
+        # 3. Create and Save the Parent Bill Entry
+        new_invoice = Bill(
+            customer_id=cust_id,
+            date=date.today(),
+            total_amount=calculated_grand_total
+        )
+
+        db.session.add(new_invoice)
+        db.session.flush() #This stages the invoice and generates its unique ID without committing yet
+
+        customer_row = Customer.query.get(cust_id)
+
+        customer_row.balance_due += calculated_grand_total
+
+        # 4. Create and Save each BillItem line item mapped to the new Invoice ID
+        for item in items_to_save:
+            line_item = BillItem(
+                bill_id=new_invoice.id,
+                product_id=item['product_id'],
+                quantity=item['qty'],
+                unit_price=item['price'],
+                total_price=item['total']
+            )
+            # Stage this line_item into the database session
+            db.session.add(line_item)
+            db.session.flush()
+        # Permanently commit all staged database changes (Bill & BillItems)
+        db.session.commit()
+
+        return redirect(url_for('list_bills'))
+
+    customers = Customer.query.all()
+    products = Product.query.all()
+
+    return render_template('bills_new.html', customers=customers, products=products)
 
 if __name__ == '__main__':
     app.run(debug=True)
