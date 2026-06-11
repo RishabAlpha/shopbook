@@ -1,4 +1,4 @@
-from flask import Flask, render_template , request, redirect, url_for
+from flask import Flask, render_template , request, redirect, url_for, flash 
 from flask_sqlalchemy import SQLAlchemy 
 from datetime import date
 
@@ -9,6 +9,7 @@ app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'shopbook.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
+app.config['SECRET_KEY'] = 'my-super-secret-shopbook-key-123'
 
 db = SQLAlchemy(app)
 
@@ -126,6 +127,13 @@ def new_bill():
             product = Product.query.get(p_id)
             row_price = product.unit_price * qty 
             calculated_grand_total += row_price
+            
+            if qty > product.stock_quantity:
+                flash(f"Error: Not enough stock for {product.name}. Available: {product.stock_quantity}")
+                return redirect(url_for('new_bill'))
+            
+            product.stock_quantity -= qty 
+            
 
             # Temporarily stage our item data structure
             items_to_save.append({
@@ -145,9 +153,7 @@ def new_bill():
         db.session.add(new_invoice)
         db.session.flush() #This stages the invoice and generates its unique ID without committing yet
 
-        customer_row = Customer.query.get(cust_id)
-
-        customer_row.balance_due += calculated_grand_total
+        
 
         # 4. Create and Save each BillItem line item mapped to the new Invoice ID
         for item in items_to_save:
@@ -160,6 +166,10 @@ def new_bill():
             )
             # Stage this line_item into the database session
             db.session.add(line_item)
+
+            customer_row = Customer.query.get(cust_id)
+            customer_row.balance_due += calculated_grand_total
+            
             db.session.flush()
         # Permanently commit all staged database changes (Bill & BillItems)
         db.session.commit()

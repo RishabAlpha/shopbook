@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Invoice - ShopBook</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <div class="container mt-5">
+        <h2 class="mb-4">🧾 Generate New Invoice</h2>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        ⚠️ {{ message }}
+                        <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <label class="form-label fw-bold">Select Customer *</label>
+                    <select name="customer_id" class="form-select" required>
+                        <option value="">-- Choose a Customer --</option>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Bill Items</h5>
+                    <button type="button" id="add-item-btn" class="btn btn-sm btn-success">+ Add Item Row</button>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table mb-0" id="bill-items-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40%">Product</th>
+                                <th style="width: 20%">Quantity</th>
+                                <th style="width: 20%">Unit Price (₹)</th>
+                                <th style="width: 20%">Total (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bill-items-body">
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="text-end">
+                <h4 class="mb-3">Grand Total: ₹<span id="grand-total">0.00</span></h4>
+                <button type="submit" class="btn btn-primary btn-lg px-5">Save & Print Invoice</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // 1. We pass our Flask products array safely into JavaScript memory
+        const availableProducts = [
+            {% for product in products %}
+            {
+                id: {{ product.id }},
+                name: "{{ product.name }}",
+                price: {{ product.unit_price }}
+            },
+            {% endfor %}
+        ];
+
+        // 2. We capture the core DOM nodes we need to talk to
+        const addItemBtn = document.getElementById('add-item-btn');
+        const itemsBody = document.getElementById('bill-items-body');
+
+        // 3. This event listener runs a function every time the button is clicked
+        addItemBtn.addEventListener('click', function() {
+            // Create a brand new empty table row element in browser memory
+            const row = document.createElement('tr');
+
+            // Generate the dynamic HTML contents inside that row
+            let productOptions = `<option value="">-- Choose Product --</option>`;
+            
+            // Loop through our JavaScript array to generate choices
+            availableProducts.forEach(function(p) {
+                productOptions += `<option value="${p.id}" data-price="${p.price}">${p.name}</option>`;
+            });
+
+            // Set the inner structure of our newly created row
+            row.innerHTML = `
+                <td>
+                    <select name="product_id[]" class="form-select product-select" required>
+                        ${productOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" name="quantity[]" class="form-control quantity-input" min="1" value="1" required>
+                </td>
+                <td>
+                    <input type="number" class="form-control price-input" readonly value="0.00">
+                </td>
+                <td>
+                    <input type="number" class="form-control total-input" readonly value="0.00">
+                </td>
+            `;
+
+            // Append this fully formed row directly into our visible table block
+            itemsBody.appendChild(row);
+
+            const productSelect = row.querySelector('.product-select');
+            const quantityInput = row.querySelector('.quantity-input');
+            const priceInput = row.querySelector('.price-input');
+            const totalInput = row.querySelector('.total-input');
+
+            function updateRowCalculations() {
+                // A. Find the option the user clicked
+                const selectedOption = productSelect.options[productSelect.selectedIndex];
+
+                // B. Read the 'data-price' attribute from that option. If none, default to 0.
+                const price = selectedOption.dataset.price ? parseFloat(selectedOption.dataset.price) : 0;
+
+                // C. Read the quantity number typed by the user
+                const qty = parseInt(quantityInput.value) || 1;
+
+                // D. Math: Multiply price by quantity
+                const rowTotal = price * qty;
+
+                // E. Update the form values instantly on screen (.toFixed(2) forces 2 decimal points like 100.00)
+                priceInput.value = price.toFixed(2);
+                totalInput.value = rowTotal.toFixed(2);
+
+                // F. Call a new function to recalculate the whole page total!
+                updateGrandTotal();
+            }
+
+            // Tell the browser to run this function whenever the user changes the product or typing quantity
+            productSelect.addEventListener('change', updateRowCalculations);
+            quantityInput.addEventListener('input', updateRowCalculations);
+        });
+
+        function updateGrandTotal() {
+                // 1. Grab all the single 'total-input' elements currently on screen
+                const allTotals = document.querySelectorAll('.total-input');
+                let totalSum = 0;
+
+                // 2. Loop through each input box and add its value to our totalSum
+                allTotals.forEach(function(inputBox) {
+                    totalSum += parseFloat(inputBox.value) || 0;
+                });
+
+                // 3. Target the grand-total text element and update its inner text!
+                document.getElementById('grand-total').innerText = totalSum.toFixed(2);
+            }
+    </script>
+</body>
+</html>
+
